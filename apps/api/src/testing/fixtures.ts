@@ -3,8 +3,15 @@ import { pino } from 'pino';
 import { createApp } from '../app.js';
 import { sign } from '../lib/signature.js';
 import { WebhookHandler } from '../modules/webhooks/webhook-handler.js';
+import type { Session } from '../modules/auth/session.js';
+import { FakeGitHubOAuth, MemoryPendingSignInStore, MemorySessionStore } from './auth-doubles.js';
+import { MemoryDashboardRepository } from './memory-dashboard-repository.js';
 import { MemoryReviewRepository } from './memory-review-repository.js';
 import { MemoryDeliveryStore, MemoryQueue } from './memory-stores.js';
+
+export const PUBLIC_URL = 'https://codelens.test';
+export const SESSION_COOKIE = '__Host-codelens_session';
+export const STATE_COOKIE = '__Host-codelens_oauth';
 
 export const WEBHOOK_SECRET = 'test-webhook-secret-0123456789';
 export const silentLogger = pino({ level: 'silent' });
@@ -73,6 +80,11 @@ export function createTestApp() {
   const queue = new MemoryQueue();
   const deliveries = new MemoryDeliveryStore();
   const health: Record<string, () => Promise<unknown>> = { postgres: () => Promise.resolve() };
+  const oauth = new FakeGitHubOAuth();
+  const sessions = new MemorySessionStore();
+  const pending = new MemoryPendingSignInStore();
+  const dashboard = new MemoryDashboardRepository();
+  const clock = { now: Date.parse('2026-10-20T12:00:00Z') };
   const app = createApp({
     config: {
       GITHUB_WEBHOOK_SECRETS: ['previous-secret-rotated-out-soon', WEBHOOK_SECRET],
@@ -82,6 +94,40 @@ export function createTestApp() {
     deliveries,
     webhooks: new WebhookHandler({ reviews, queue, logger: silentLogger }),
     health,
+    auth: {
+      oauth,
+      sessions,
+      pending,
+      config: { PUBLIC_URL, COOKIE_SECURE: true, SESSION_HOURS: 8 },
+      now: () => clock.now,
+    },
+    dashboard,
   });
-  return { app, reviews, queue, deliveries, health };
+
+  /** Opens a session directly in the store and returns its Cookie header. */
+  async function signedIn(overrides: Partial<Session> = {}): Promise<string> {
+    const id = await sessions.create({
+      user: oauth.profile,
+      accessToken: 'ghu_amina',
+      repositoryIds: [1001],
+      refreshedAt: clock.now,
+      expiresAt: clock.now + 8 * 3600_000,
+      ...overrides,
+    });
+    return `${SESSION_COOKIE}=${id}`;
+  }
+
+  return {
+    app,
+    reviews,
+    queue,
+    deliveries,
+    health,
+    oauth,
+    sessions,
+    pending,
+    dashboard,
+    clock,
+    signedIn,
+  };
 }
