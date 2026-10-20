@@ -1,0 +1,9 @@
+# Code owners are requested automatically on every pull request.
+* @KarnasZiad
+
+# Webhook verification, GitHub credentials and the dashboard sign-in need a security-focused review.
+/apps/api/src/modules/webhooks/ @KarnasZiad
+/apps/api/src/modules/github/ @KarnasZiad
+/apps/api/src/modules/auth/ @KarnasZiad
+/apps/api/drizzle/ @KarnasZiad
+/packages/review-engine/src/analyzers/ @KarnasZiad
