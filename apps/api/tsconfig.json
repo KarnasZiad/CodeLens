@@ -1,0 +1,13 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
+    "types": ["node"],
+    "verbatimModuleSyntax": true,
+    // Type-checks and lints against the engine sources, so neither needs a prior build.
+    "customConditions": ["@codelens/source"],
+    "noEmit": true
+  },
+  "include": ["src", "test", "*.config.ts"]
+}

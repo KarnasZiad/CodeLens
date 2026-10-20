@@ -36,6 +36,7 @@
     "ignoredBuiltDependencies": [
       "@scarf/scarf",
       "cpu-features",
+      "msgpackr-extract",
       "protobufjs",
       "ssh2"
     ],

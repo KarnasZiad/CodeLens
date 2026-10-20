@@ -1,0 +1,12 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    // The build uses the compiled engine (dist), built first by `pnpm -r build`.
+    "customConditions": [],
+    "noEmit": false,
+    "rootDir": "src",
+    "outDir": "dist"
+  },
+  "include": ["src"],
+  "exclude": ["src/**/*.spec.ts", "src/testing"]
+}

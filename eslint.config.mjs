@@ -35,8 +35,9 @@ export default defineConfig(
     rules: {
       // Assertions such as expect(mock.method) reference methods without calling them.
       '@typescript-eslint/unbound-method': 'off',
-      // Asymmetric matchers (expect.objectContaining, expect.stringContaining) are typed any.
+      // Asymmetric matchers (expect.objectContaining...) and supertest bodies are typed any.
       '@typescript-eslint/no-unsafe-assignment': 'off',
+      '@typescript-eslint/no-unsafe-member-access': 'off',
     },
   },
   {

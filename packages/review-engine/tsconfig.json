@@ -4,6 +4,7 @@
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
     "types": ["node"],
+    "verbatimModuleSyntax": true,
     "noEmit": true
   },
   "include": ["src", "test", "vitest.config.ts"]

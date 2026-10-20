@@ -1,0 +1,56 @@
+{
+  "name": "@codelens/api",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Webhook receiver, review worker and dashboard API",
+  "license": "MIT",
+  "type": "module",
+  "files": [
+    "dist",
+    "drizzle"
+  ],
+  "scripts": {
+    "dev": "tsx watch --env-file-if-exists=.env src/main.ts",
+    "dev:worker": "tsx watch --env-file-if-exists=.env src/worker.ts",
+    "build": "tsc -p tsconfig.build.json",
+    "start": "node dist/main.js",
+    "start:worker": "node dist/worker.js",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "test:integration": "vitest run --config vitest.integration.config.ts",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "tsx --env-file-if-exists=.env src/cli/migrate.ts"
+  },
+  "dependencies": {
+    "@codelens/review-engine": "workspace:*",
+    "@octokit/auth-app": "^8.3.1",
+    "@octokit/request-error": "^7.1.2",
+    "@octokit/rest": "^22.0.1",
+    "bullmq": "^5.81.5",
+    "drizzle-orm": "^0.45.4",
+    "express": "^5.3.0",
+    "helmet": "^8.3.0",
+    "ioredis": "5.11.1",
+    "mongodb": "^7.7.0",
+    "pg": "^8.23.1",
+    "pino": "^10.4.0",
+    "pino-http": "^11.0.0",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@testcontainers/postgresql": "^11.14.0",
+    "@testcontainers/redis": "^11.14.0",
+    "@types/express": "^5.0.6",
+    "@types/node": "^22.20.5",
+    "@types/pg": "^8.23.1",
+    "@types/supertest": "^7.2.1",
+    "@vitest/coverage-v8": "^4.1.12",
+    "drizzle-kit": "^0.31.11",
+    "supertest": "^7.3.1",
+    "testcontainers": "^11.14.0",
+    "tsx": "^4.23.15",
+    "vitest": "^4.1.12"
+  }
+}
