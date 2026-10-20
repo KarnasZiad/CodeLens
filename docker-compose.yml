@@ -1,6 +1,6 @@
 # Local stack.
 #   docker compose up -d                  PostgreSQL, MongoDB and Redis (run the apps with pnpm dev)
-#   docker compose --profile app up -d    full stack built from the Dockerfile
+#   docker compose --profile app up -d    full stack built from the Dockerfiles (dashboard on :3001)
 # Databases listen on the loopback only and have no authentication: local development only.
 name: codelens
 
@@ -104,6 +104,21 @@ services:
     secrets:
       - github_app_key
     depends_on: *dependencies
+    restart: unless-stopped
+
+  web:
+    profiles: [app]
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+      args:
+        API_URL: http://api:3000
+    environment:
+      API_URL: http://api:3000
+    ports:
+      - '3001:3001'
+    depends_on:
+      - api
     restart: unless-stopped
 
 secrets:

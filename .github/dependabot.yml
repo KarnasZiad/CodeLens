@@ -25,7 +25,7 @@ updates:
       prefix: ci
 
   - package-ecosystem: docker
-    directory: /apps/api
+    directories: [/apps/api, /apps/web]
     schedule:
       interval: weekly
     commit-message:
