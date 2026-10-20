@@ -70,8 +70,18 @@ services:
       MONGODB_URL: mongodb://mongo:27017
       REDIS_URL: redis://redis:6379
       GITHUB_WEBHOOK_SECRETS: ${GITHUB_WEBHOOK_SECRETS:?Set GITHUB_WEBHOOK_SECRETS in .env}
+      GITHUB_CLIENT_ID: ${GITHUB_CLIENT_ID:?Set GITHUB_CLIENT_ID in .env}
+      GITHUB_CLIENT_SECRET: ${GITHUB_CLIENT_SECRET:?Set GITHUB_CLIENT_SECRET in .env}
+      SESSION_SECRET: ${SESSION_SECRET:?Set SESSION_SECRET in .env}
+      PUBLIC_URL: http://localhost:3001
+      # The local stack is served over plain HTTP.
+      COOKIE_SECURE: 'false'
+      # The dashboard's Next.js server is the only hop in front of the API.
+      TRUST_PROXY_HOPS: '1'
+    # Loopback only: behind one trusted hop, a direct caller could forge X-Forwarded-For.
+    # Webhooks reach it through the smee client, which runs on the same machine.
     ports:
-      - '3000:3000'
+      - '127.0.0.1:3000:3000'
     depends_on: &dependencies
       migrate:
         condition: service_completed_successfully
