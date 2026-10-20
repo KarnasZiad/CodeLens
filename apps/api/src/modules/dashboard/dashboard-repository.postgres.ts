@@ -1,5 +1,5 @@
 import type { Severity } from '@codelens/review-engine';
-import { eq, inArray, sql } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
 import type { Database } from '../../infrastructure/database.js';
 import { findings, pullRequests, repositories, reviewRuns } from '../../infrastructure/schema.js';
 import type { Conclusion, PullRequestState, RunStatus } from '../reviews/review-repository.js';
@@ -73,7 +73,10 @@ export class PostgresDashboardRepository implements DashboardRepository {
         where p.repository_id = r.id and rr.status = 'completed'
         order by rr.completed_at desc limit 1
       ) last on true
-      where ${inArray(repositories.id, [...ids])}
+      where r.id in (${sql.join(
+        ids.map((id) => sql`${id}`),
+        sql`, `,
+      )})
       order by r.full_name`);
     return rows.map((row) => ({
       id: Number(row.id),
