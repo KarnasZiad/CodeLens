@@ -1,0 +1,19 @@
+{
+  "name": "CodeLens",
+  "url": "https://github.com/KarnasZiad/CodeLens",
+  "description": "Revue de code automatisée : secrets, injections SQL, débogage oublié, complexité et quality gate sur les lignes modifiées.",
+  "hook_attributes": {
+    "url": "https://codelens.example.com/webhooks/github",
+    "active": true
+  },
+  "redirect_url": "https://codelens.example.com/api/auth/github/callback",
+  "callback_urls": ["https://codelens.example.com/api/auth/github/callback"],
+  "public": false,
+  "default_permissions": {
+    "checks": "write",
+    "contents": "read",
+    "metadata": "read",
+    "pull_requests": "write"
+  },
+  "default_events": ["pull_request"]
+}

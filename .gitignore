@@ -33,3 +33,6 @@ Thumbs.db
 .next/
 out/
 next-env.d.ts
+
+# GitHub App private keys: never committed, mounted as secrets.
+*.pem
