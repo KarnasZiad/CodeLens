@@ -208,8 +208,9 @@ describe('PostgresReviewRepository', () => {
   });
 
   it('rejects malformed commits at the database level too', async () => {
-    await expect(reviews.createRun(5001, 'not-a-sha')).rejects.toThrow(
-      /review_runs_head_sha_check/,
-    );
+    // Drizzle wraps the driver error; the violated constraint is on its cause.
+    await expect(reviews.createRun(5001, 'not-a-sha')).rejects.toMatchObject({
+      cause: { constraint: 'review_runs_head_sha_check' },
+    });
   });
 });
