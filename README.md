@@ -57,13 +57,16 @@ flowchart LR
   worker -->|check run, annotations, commentaire| gh
   worker --> pg
   worker -->|rapport complet| mongo
+  browser([Navigateur]) --> web[Tableau de bord Next.js 16]
+  web -->|/api relayée, cookie de session| api
 ```
 
-| Élément                  | Rôle                                                                      |
-| ------------------------ | ------------------------------------------------------------------------- |
-| `packages/review-engine` | Moteur pur : parseur de diff, analyseurs, quality gate, rendu Markdown    |
-| `apps/api` (`main.ts`)   | Webhooks : signature, dédoublonnage, synchronisation, mise en file        |
-| `apps/api` (`worker.ts`) | Analyses : GitHub App, moteur, publication ; reprises et limites de débit |
+| Élément                  | Rôle                                                                         |
+| ------------------------ | ---------------------------------------------------------------------------- |
+| `packages/review-engine` | Moteur pur : parseur de diff, analyseurs, quality gate, rendu Markdown       |
+| `apps/api` (`main.ts`)   | Webhooks : signature, dédoublonnage, synchronisation, mise en file           |
+| `apps/api` (`worker.ts`) | Analyses : GitHub App, moteur, publication ; reprises et limites de débit    |
+| `apps/web`               | Tableau de bord : connexion GitHub, dépôts visibles, PR, analyses, tendances |
 
 Le webhook répond en quelques millisecondes ; l'analyse se fait dans le worker
 ([ADR 0003](docs/adr/0003-analyse-asynchrone-bullmq.md)). Détails : [C4](docs/architecture/c4.md),
@@ -73,9 +76,10 @@ Le webhook répond en quelques millisecondes ; l'analyse se fait dans le worker
 | Couche  | Technologies                                                                  |
 | ------- | ----------------------------------------------------------------------------- |
 | Serveur | Node.js 22, Express 5, BullMQ 5, Octokit (GitHub App), Zod 4, Pino            |
+| Web     | Next.js 16 (App Router, rendu serveur), React 19, Tailwind CSS 4, CSP à nonce |
 | Moteur  | TypeScript compiler API (complexité), YAML, picomatch                         |
 | Données | PostgreSQL 17 (Drizzle ORM), MongoDB 8 (TTL), Redis 7                         |
-| Tests   | Vitest, Supertest, Testcontainers                                             |
+| Tests   | Vitest, Supertest, Testing Library, Testcontainers                            |
 | CI/CD   | GitHub Actions, CodeQL, Trivy, revue des dépendances, Dependabot, images GHCR |
 
 ## Démarrage rapide
@@ -89,6 +93,7 @@ cp apps/api/.env.example apps/api/.env      # secret du webhook, identifiant et 
 pnpm --filter @codelens/api db:migrate
 pnpm --filter @codelens/api dev             # API sur http://localhost:3000
 pnpm --filter @codelens/api dev:worker      # worker
+pnpm --filter @codelens/web dev             # tableau de bord sur http://localhost:3001
 ```
 
 ### Créer la GitHub App
@@ -104,8 +109,11 @@ pnpm --filter @codelens/api dev:worker      # worker
    `npx smee-client --url https://smee.io/<canal> --target http://localhost:3000/webhooks/github`.
 4. Installer l'app sur un dépôt de test et ouvrir une pull request.
 
-Pile complète depuis le Dockerfile : `cp .env.example .env`, puis
-`docker compose --profile app up -d --build`.
+Le tableau de bord utilise la connexion OAuth de la même GitHub App : renseigner son _Client ID_,
+un _Client secret_ et l'URL de rappel `http://localhost:3001/api/auth/github/callback`.
+
+Pile complète depuis les Dockerfiles : `cp .env.example .env`, puis
+`docker compose --profile app up -d --build` ; le tableau de bord répond sur <http://localhost:3001>.
 
 ## Configuration d'un dépôt
 
@@ -128,7 +136,7 @@ Une configuration invalide donne un check `neutral` qui liste chaque erreur avec
 
 ## Sécurité
 
-[Modèle de menaces STRIDE](docs/security/threat-model.md) : 18 menaces, leurs mesures et les
+[Modèle de menaces STRIDE](docs/security/threat-model.md) : 19 menaces, leurs mesures et les
 risques résiduels. Quelques choix notables :
 
 - **Webhook authentifié avant tout traitement** : HMAC-SHA256 du corps brut, comparaison en temps
@@ -147,12 +155,13 @@ pnpm test:coverage       # moteur et API, seuils de couverture (80 à 90 %)
 pnpm test:integration    # PostgreSQL, MongoDB et Redis réels (Docker requis)
 ```
 
-| Niveau      | Exemples                                                                                          |
-| ----------- | ------------------------------------------------------------------------------------------------- |
-| Moteur      | Diffs GitHub réels, secrets jamais recopiés, tagged templates SQL, lignes piégées contre le ReDoS |
-| HTTP        | Signature forgée, corps altéré, rotation de secret, 413, doublons, rejeu après panne              |
-| Adaptateur  | Octokit avec une vraie clé RSA : jeton d'installation, pagination, lots de 50 annotations         |
-| Intégration | Migrations concurrentes, une analyse par commit, cascade, TTL, webhook → BullMQ → check publié    |
+| Niveau          | Exemples                                                                                          |
+| --------------- | ------------------------------------------------------------------------------------------------- |
+| Moteur          | Diffs GitHub réels, secrets jamais recopiés, tagged templates SQL, lignes piégées contre le ReDoS |
+| HTTP            | Signature forgée, corps altéré, rotation de secret, 413, doublons, rejeu après panne              |
+| Adaptateur      | Octokit avec une vraie clé RSA : jeton d'installation, pagination, lots de 50 annotations         |
+| Intégration     | Migrations concurrentes, une analyse par commit, cascade, TTL, webhook → BullMQ → check publié    |
+| Tableau de bord | OAuth (state lié au navigateur, PKCE, usage unique), dépôts invisibles en 404, CSP à nonce        |
 
 Chaque pull request passe par la CI (format, lint, typecheck, tests et couverture, build, tests
 d'intégration, image Docker scannée, CodeQL, Trivy, revue des dépendances) et par la checklist du
@@ -163,7 +172,7 @@ d'intégration, image Docker scannée, CodeQL, Trivy, revue des dépendances) et
 - [x] Conception : cahier des charges, user stories, C4, STRIDE, ADR
 - [x] Moteur d'analyse : diff, 8 analyseurs, quality gate, rendu Markdown
 - [x] Webhooks signés, file BullMQ, worker GitHub App, check runs, annotations, commentaire
-- [ ] Tableau de bord Next.js : connexion GitHub, dépôts, PR, tendances
+- [x] Tableau de bord Next.js : connexion GitHub (PKCE), dépôts visibles, PR, analyses, tendances
 - [ ] Commande `/codelens recheck` et bouton « Re-run » du check
 - [ ] Adaptateur GitLab (merge requests, discussions)
 - [ ] Analyseurs Python et Go via tree-sitter, suggestions de correction
