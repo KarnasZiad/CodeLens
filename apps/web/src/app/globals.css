@@ -1,0 +1,57 @@
+@import 'tailwindcss';
+
+@theme {
+  --font-sans: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+}
+
+@utility card {
+  @apply rounded-lg border border-slate-200 bg-white p-4 shadow-sm;
+}
+
+@utility badge {
+  @apply inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium whitespace-nowrap;
+}
+
+@utility link {
+  @apply text-indigo-700 underline-offset-2 hover:underline;
+}
+
+@utility btn-primary {
+  @apply inline-flex items-center rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-700 disabled:opacity-50;
+}
+
+@utility btn-secondary {
+  @apply inline-flex items-center rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm text-slate-700 hover:bg-slate-50 disabled:opacity-50;
+}
+
+@layer components {
+  .data-table {
+    @apply w-full text-left text-sm;
+  }
+  .data-table th {
+    @apply border-b border-slate-200 px-3 py-2 text-xs font-semibold tracking-wide text-slate-500 uppercase;
+  }
+  .data-table td {
+    @apply border-b border-slate-100 px-3 py-2 align-top;
+  }
+
+  /* Analyzer colors of the trend chart: distinct, readable on white. */
+  .trend-0 {
+    fill: var(--color-indigo-500);
+  }
+  .trend-1 {
+    fill: var(--color-amber-500);
+  }
+  .trend-2 {
+    fill: var(--color-emerald-500);
+  }
+  .trend-3 {
+    fill: var(--color-rose-500);
+  }
+  .trend-4 {
+    fill: var(--color-sky-500);
+  }
+  .trend-5 {
+    fill: var(--color-violet-500);
+  }
+}
