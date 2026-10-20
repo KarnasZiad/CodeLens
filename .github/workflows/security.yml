@@ -66,3 +66,6 @@ jobs:
         with:
           fail-on-severity: high
           comment-summary-in-pr: on-failure
+          # braces <= 3.0.3 has no fixed release yet. It is only reached through the Next.js ESLint
+          # plugin, at lint time, with glob patterns written in this repository. Remove once fixed.
+          allow-ghsas: GHSA-vfj7-8cjw-p6xm

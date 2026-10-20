@@ -26,6 +26,7 @@ export default defineConfig({
         'src/**/*.postgres.ts',
         'src/**/*.mongo.ts',
         'src/**/*.bullmq.ts',
+        'src/**/*.redis.ts',
       ],
       reporter: ['text-summary', 'lcov', 'html'],
       thresholds: { lines: 85, statements: 85, functions: 85, branches: 80 },

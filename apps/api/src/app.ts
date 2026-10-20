@@ -1,10 +1,14 @@
 import { randomUUID } from 'node:crypto';
 import express, { type Express } from 'express';
+import { rateLimit } from 'express-rate-limit';
 import helmet from 'helmet';
 import { pinoHttp } from 'pino-http';
 import type { Logger } from 'pino';
 import type { ApiConfig } from './config.js';
-import { errorHandler, notFound } from './lib/problem.js';
+import { errorHandler, HttpProblem, notFound } from './lib/problem.js';
+import { type AuthDeps, authRouter, requireSession } from './modules/auth/auth-router.js';
+import type { DashboardRepository } from './modules/dashboard/dashboard-repository.js';
+import { dashboardRouter } from './modules/dashboard/dashboard-router.js';
 import { type HealthChecks, healthRouter } from './modules/health/health-router.js';
 import type { DeliveryStore } from './modules/webhooks/delivery-store.js';
 import type { WebhookHandler } from './modules/webhooks/webhook-handler.js';
@@ -16,6 +20,8 @@ export interface AppDeps {
   deliveries: DeliveryStore;
   webhooks: WebhookHandler;
   health: HealthChecks;
+  auth: Omit<AuthDeps, 'logger'>;
+  dashboard: DashboardRepository;
 }
 
 const REQUEST_ID = /^[\w-]{1,64}$/;
@@ -51,6 +57,23 @@ export function createApp(deps: AppDeps): Express {
       logger: deps.logger,
     }),
   );
+
+  const auth: AuthDeps = { ...deps.auth, logger: deps.logger };
+  app.use(
+    '/api/auth',
+    // Sign-in endpoints call GitHub: a client looping on them would spend the app's quota.
+    rateLimit({
+      windowMs: 60_000,
+      limit: 30,
+      standardHeaders: 'draft-8',
+      legacyHeaders: false,
+      handler: (_request, _response, next) => {
+        next(new HttpProblem(429));
+      },
+    }),
+    authRouter(auth),
+  );
+  app.use('/api', requireSession(auth), dashboardRouter(deps.dashboard));
 
   app.use(notFound);
   app.use(errorHandler(deps.logger));

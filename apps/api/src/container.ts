@@ -3,6 +3,10 @@ import type { ApiConfig } from './config.js';
 import { createDatabase } from './infrastructure/database.js';
 import { connectMongo, ensureIndexes } from './infrastructure/mongo.js';
 import { createRedis } from './infrastructure/redis.js';
+import { SecretBox } from './lib/secret-box.js';
+import { RedisPendingSignInStore, RedisSessionStore } from './modules/auth/auth-stores.redis.js';
+import { GitHubOAuthClient } from './modules/auth/github-oauth.js';
+import { PostgresDashboardRepository } from './modules/dashboard/dashboard-repository.postgres.js';
 import { BullMqReviewQueue } from './modules/reviews/review-queue.bullmq.js';
 import { PostgresReviewRepository } from './modules/reviews/review-repository.postgres.js';
 import { MongoDeliveryStore } from './modules/webhooks/delivery-store.mongo.js';
@@ -46,6 +50,19 @@ export async function buildApiDeps(config: ApiConfig, logger: Logger) {
     deliveries: new MongoDeliveryStore(connections.mongo.db),
     webhooks: new WebhookHandler({ reviews: connections.reviews, queue, logger }),
     health: connections.health,
+    auth: {
+      oauth: new GitHubOAuthClient({
+        clientId: config.GITHUB_CLIENT_ID,
+        clientSecret: config.GITHUB_CLIENT_SECRET,
+        redirectUri: new URL('/api/auth/github/callback', config.PUBLIC_URL).toString(),
+        apiUrl: config.GITHUB_API_URL,
+        webUrl: config.GITHUB_WEB_URL,
+      }),
+      sessions: new RedisSessionStore(connections.redis, new SecretBox(config.SESSION_SECRET)),
+      pending: new RedisPendingSignInStore(connections.redis),
+      config,
+    },
+    dashboard: new PostgresDashboardRepository(connections.db),
   };
   return {
     deps,

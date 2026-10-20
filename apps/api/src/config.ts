@@ -15,7 +15,17 @@ const baseSchema = z.object({
   MONGODB_URL: z.string().regex(/^mongodb(\+srv)?:[/][/]/, 'MONGODB_URL must be a MongoDB URL'),
   MONGODB_DATABASE: z.string().default('codelens'),
   REDIS_URL: z.string().regex(/^rediss?:[/][/]/, 'REDIS_URL must be a Redis URL'),
+  /** Fixed by the operator, never read from a payload: GitHub Enterprise Server support. */
+  GITHUB_API_URL: z.url({ protocol: /^https$/ }).default('https://api.github.com'),
+  GITHUB_WEB_URL: z.url({ protocol: /^https$/ }).default('https://github.com'),
 });
+
+const booleanFlag = z.enum(['true', 'false']).transform((value) => value === 'true');
+
+const base64Key = z
+  .string()
+  .transform((value) => Buffer.from(value, 'base64'))
+  .refine((key) => key.length === 32, 'Must be 32 bytes, base64-encoded');
 
 export const ApiConfigSchema = baseSchema.extend({
   HOST: z.string().default('0.0.0.0'),
@@ -26,6 +36,15 @@ export const ApiConfigSchema = baseSchema.extend({
   GITHUB_WEBHOOK_SECRETS: commaList.pipe(
     z.array(z.string().min(20, 'Each webhook secret needs at least 20 characters')).min(1),
   ),
+
+  /** Origin of the dashboard: OAuth redirect URI and Origin check of state-changing requests. */
+  PUBLIC_URL: z.url({ protocol: /^https?$/ }).default('http://localhost:3001'),
+  GITHUB_CLIENT_ID: z.string().min(1),
+  GITHUB_CLIENT_SECRET: z.string().min(1),
+  /** Encrypts the GitHub user tokens kept in sessions. */
+  SESSION_SECRET: base64Key,
+  SESSION_HOURS: z.coerce.number().int().min(1).max(12).default(8),
+  COOKIE_SECURE: booleanFlag.default(true),
 });
 
 export const WorkerConfigSchema = baseSchema.extend({
@@ -33,9 +52,6 @@ export const WorkerConfigSchema = baseSchema.extend({
   /** PEM private key of the GitHub App, inline (\n escaped) or through GITHUB_PRIVATE_KEY_FILE. */
   GITHUB_PRIVATE_KEY: z.string().optional(),
   GITHUB_PRIVATE_KEY_FILE: z.string().optional(),
-  /** Fixed by the operator, never read from a payload: GitHub Enterprise Server support. */
-  GITHUB_API_URL: z.url({ protocol: /^https$/ }).default('https://api.github.com'),
-  GITHUB_WEB_URL: z.url({ protocol: /^https$/ }).default('https://github.com'),
   WORKER_CONCURRENCY: z.coerce.number().int().min(1).max(32).default(4),
 });
 
